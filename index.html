@@ -20,8 +20,31 @@
     
     <style>
         html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background-color: #f0f0f0; }
-        .leaflet-bar.custom-control { background-color: white; padding: 8px 12px; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px; cursor: pointer; font: 14px "Helvetica Neue", Arial, Helvetica, sans-serif; box-shadow: 0 1px 5px rgba(0,0,0,0.65); }
-        .info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; max-height: 45vh; overflow-y: auto; }
+        .leaflet-bar.custom-control { 
+            background-color: white; 
+            padding: 8px 12px; 
+            border: 2px solid rgba(0,0,0,0.2); 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font: 14px "Helvetica Neue", Arial, Helvetica, sans-serif; 
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65); 
+        }
+        .info { 
+            padding: 6px 8px; 
+            font: 14px/16px Arial, Helvetica, sans-serif; 
+            background: white; 
+            background: rgba(255,255,255,0.8); 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            border-radius: 5px; 
+            max-height: 45vh; 
+            overflow-y: auto; 
+            /* Estilos por defecto para pantallas grandes (desktop) */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 300px; /* Ancho fijo para desktop */
+            z-index: 1000;
+        }
         .info h4 { margin: 0 0 5px; color: #777; cursor: pointer; user-select: none; }
         .info h4::after { content: ' ▼'; font-size: 10px; float: right; }
         .info.collapsed h4::after { content: ' ►'; }
@@ -51,6 +74,71 @@
             color: #333;
             box-shadow: 0 1px 5px rgba(0,0,0,0.65);
         }
+
+        /* --- MEDIA QUERIES PARA ADAPTACIÓN A MÓVILES --- */
+
+        /* Para pantallas pequeñas (ej. celulares, hasta 768px de ancho) */
+        @media (max-width: 768px) {
+            .info {
+                width: calc(100% - 20px); /* Ocupa casi todo el ancho, con margen */
+                max-width: 350px; /* Límite máximo para que no sea demasiado ancho en tablets pequeñas */
+                left: 10px; /* Mover a la izquierda para mejor disposición */
+                right: 10px; /* Mantener margen derecho */
+                top: 10px; /* Posición superior */
+                max-height: 50vh; /* Ocupa hasta la mitad de la altura de la ventana */
+                font-size: 13px; /* Ligeramente más pequeña para ahorrar espacio */
+            }
+
+            .info h4 {
+                font-size: 16px; /* Título un poco más grande para ser tocable */
+                padding: 5px 0;
+            }
+
+            .info label {
+                font-size: 11px; /* Etiquetas más pequeñas */
+            }
+
+            /* Ajustes para los controles personalizados (Cargar, Exportar) */
+            .leaflet-bar.custom-control {
+                padding: 10px 15px; /* Aumentar el padding para hacer el botón más grande */
+                font-size: 15px;
+                min-width: 120px; /* Asegurar un ancho mínimo */
+                text-align: center;
+                /* Puedes ajustar la posición si se solapan con otros elementos */
+            }
+
+            /* Ajustar la posición de los controles de Leaflet si es necesario */
+            .leaflet-top.leaflet-left {
+                top: 10px; /* Mantener el margen superior */
+                left: 10px;
+                display: flex; /* Para que los botones se apilen horizontalmente si son muchos */
+                flex-direction: column; /* Apilar verticalmente */
+                gap: 5px; /* Espacio entre los botones */
+            }
+            .leaflet-top.leaflet-right {
+                top: 10px;
+                right: 10px;
+            }
+            .leaflet-bottom.leaflet-left {
+                bottom: 10px;
+                left: 10px;
+            }
+            .leaflet-bottom.leaflet-right {
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+
+        /* Puedes añadir otra media query para tablets (entre 769px y 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .info {
+                width: 300px; /* Un poco más de espacio que en móvil */
+                right: 15px;
+                top: 15px;
+                max-height: 60vh;
+            }
+            /* Otros ajustes específicos para tablets si los necesitas */
+        }
     </style>
 </head>
 <body>
@@ -65,7 +153,7 @@
     let orderedLayers = [];
     let sortableInstance = null;
     
-    // Nueva variable para el historial de elementos dibujados
+    // Nueva variable para el historial de elementos dibujados (para Ctrl+Z)
     let drawnItemsHistory = []; 
 
     const oceanBasemap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
@@ -247,15 +335,11 @@
 
     // --- Event Listener para Ctrl+Z ---
     document.addEventListener('keydown', function(event) {
-        // Verifica si Ctrl (Windows/Linux) o Command (Mac) están presionados, y la tecla 'z'
         const isCtrlOrCmdZ = (event.ctrlKey || event.metaKey) && event.key === 'z';
-
-        // Solo actuamos si no estamos en un campo de texto para evitar deshacer texto
-        // (aunque en este caso Leaflet.draw no tiene inputs de texto directo, es buena práctica)
         const isInputTarget = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';
 
         if (isCtrlOrCmdZ && !isInputTarget) {
-            event.preventDefault(); // Evita el comportamiento predeterminado del navegador (ej. historial de navegación)
+            event.preventDefault(); // Evita el comportamiento predeterminado del navegador
             undoLastDrawAction();
         }
     });
